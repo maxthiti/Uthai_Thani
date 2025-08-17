@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>เที่ยวอุทัยธานี – Uthai Thani Travel Guide</title>
+    <meta name="description"
+        content="แนะนำแหล่งท่องเที่ยวจังหวัดอุทัยธานี พร้อมแผนที่ ค้นหา หมวดหมู่ และตัวช่วยจัดทริปแบบง่าย ๆ ในไฟล์เดียว พร้อมใช้งานและ deploy ทันที" />
+
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eef9f3', 100: '#d7f2e3', 200: '#b2e6cc', 300: '#84d6b0', 400: '#4fbe8f', 500: '#2b9f74', 600: '#1e7f5e', 700: '#18654d', 800: '#134f3e', 900: '#0f3f33' }
+                    }
+                }
+            },
+            darkMode: 'class'
+        }
+    </script>
+
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+
+
+    <!-- Fonts & Icons (Heroicons via SVG inline later) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            color-scheme: light dark;
+        }
+
+        html {
+            font-family: 'Kanit', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans Thai', 'Noto Sans', 'Liberation Sans', sans-serif;
+        }
+
+        .glass {
+            backdrop-filter: blur(8px);
+            background: color-mix(in oklab, white 70%, transparent);
+        }
+
+        .dark .glass {
+            background: color-mix(in oklab, #0b1a14 60%, transparent);
+        }
+
+        .scroll-snap {
+            scroll-snap-type: x mandatory;
+        }
+
+        .snap-card {
+            scroll-snap-align: start;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gradient-to-br from-brand-50 to-white dark:from-slate-900 dark:to-slate-950 text-slate-800 dark:text-slate-100">
+    <!-- Header -->
+    <header
+        class="sticky top-0 z-40 border-b border-white/60 dark:border-white/10 bg-white/70 dark:bg-slate-900/70 glass">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-2xl bg-brand-600 text-white grid place-items-center shadow">
+                <!-- simple logo -->
+                <svg viewBox="0 0 24 24" class="w-5 h-5">
+                    <path fill="currentColor" d="M3 21h18l-9-18zM12 7l5.5 11H6.5z" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h1 class="text-lg md:text-xl font-bold">เที่ยวอุทัยธานี</h1>
+                <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400">Uthai Thani Travel Guide – ค้นหา •
+                    วางแผน • ออกทริป</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="shareBtn"
+                    class="hidden sm:inline-flex px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm shadow">แชร์ลิงก์</button>
+                <button id="darkToggle"
+                    class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm">
+                    <span class="inline dark:hidden">โหมดมืด</span>
+                    <span class="hidden dark:inline">โหมดสว่าง</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="relative">
+        <div class="h-[42vh] md:h-[56vh] w-full overflow-hidden">
+            <img src="https://i.ytimg.com/vi/00VcptMB7HM/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCdXkVAiJib1-uqlY9W3VAusODD8g"
+                alt="Uthai Thani nature" class="w-full h-full object-cover" />
+        </div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+        <div class="absolute inset-x-0 bottom-6">
+            <div class="max-w-5xl mx-auto px-4">
+                <div class="glass rounded-2xl p-4 md:p-6 shadow-xl border border-white/40 dark:border-white/10">
+                    <h2 class="text-white text-2xl md:text-3xl font-bold drop-shadow">ออกสำรวจอุทัยธานี</h2>
+                    <p class="text-white/90 text-sm md:text-base">เลือกสไตล์ทริปของคุณ: วัดสวย ธรรมชาติ ป่าเขา ริมน้ำ
+                        และคาเฟ่โลคอล</p>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div class="md:col-span-6">
+                            <input id="searchInput" type="search"
+                                placeholder="ค้นหาสถานที่ / คีย์เวิร์ด เช่น วัด ป่า เขื่อน"
+                                class="w-full px-4 py-3 rounded-xl border border-white/60 bg-white/90 text-slate-800 shadow focus:outline-none focus:ring-2 focus:ring-brand-400" />
+                        </div>
+                        <div class="md:col-span-6 flex flex-wrap gap-2">
+                            <button data-cat="ทั้งหมด" class="chip active">ทั้งหมด</button>
+                            <button data-cat="วัด/วัฒนธรรม" class="chip">วัด/วัฒนธรรม</button>
+                            <button data-cat="ธรรมชาติ/ป่า" class="chip">ธรรมชาติ/ป่า</button>
+                            <button data-cat="ริมแม่น้ำ/วิว" class="chip">ริมแม่น้ำ/วิว</button>
+                            <button data-cat="คาเฟ่/โลคอล" class="chip">คาเฟ่/โลคอล</button>
+                        </div>
+                    </div>
+                    <style>
+                        .chip {
+                            @apply px-3 py-2 rounded-full text-xs md:text-sm border border-white/60 bg-white/80 text-slate-700 hover:bg-white shadow;
+                        }
+
+                        .chip.active {
+                            @apply bg-brand-600 text-white border-brand-600;
+                        }
+
+                        .dark .chip {
+                            @apply border-white/10 bg-slate-800/80 text-slate-100;
+                        }
+
+                        .dark .chip.active {
+                            @apply bg-brand-500 border-brand-500;
+                        }
+                    </style>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Carousel -->
+    <section class="max-w-7xl mx-auto px-4 mt-10 md:mt-16">
+        <h3 class="text-xl md:text-2xl font-bold mb-3">ไฮไลต์ห้ามพลาด</h3>
+        <div id="featuredRow" class="flex gap-4 overflow-x-auto pb-3 scroll-snap"></div>
+    </section>
+
+    <!-- Main layout -->
+    <main class="max-w-7xl mx-auto px-4 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Card grid -->
+        <section class="lg:col-span-2">
+            <div id="cards" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+            <p id="emptyState" class="hidden text-slate-500 dark:text-slate-400 mt-6">
+                ไม่พบสถานที่ที่ตรงกับการค้นหา/ตัวกรอง</p>
+        </section>
+
+        <!-- Sidebar -->
+        <aside class="lg:col-span-1">
+            <div class="sticky top-24 space-y-6">
+                <!-- Map -->
+                <div
+                    class="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow bg-white dark:bg-slate-900">
+                    <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <h4 class="font-semibold">แผนที่</h4>
+                        <button id="fitMapBtn" class="text-sm underline">ซูมรวมหมุด</button>
+                    </div>
+                    <div id="map" class="h-72 w-full"></div>
+                </div>
+
+                <!-- Trip planner -->
+                <div
+                    class="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow bg-white dark:bg-slate-900">
+                    <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <h4 class="font-semibold">แผนทริปของฉัน</h4>
+                        <div class="flex gap-2">
+                            <button id="clearPlanBtn" class="text-xs px-2 py-1 rounded-lg border">ล้าง</button>
+                            <button id="showTripBtn" class="bg-blue-600 text-white px-3 py-1 rounded">
+                                ดูแผนที่เส้นทาง
+                            </button>
+                        </div>
+                    </div>
+                    <ul id="planList" class="divide-y divide-slate-100 dark:divide-slate-800"></ul>
+                    <div class="p-4">
+                        <p class="text-xs text-slate-500">* รายการจะบันทึกไว้ในเครื่องอัตโนมัติ</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-16">
+        <div class="max-w-7xl mx-auto px-4 py-10 text-sm text-slate-500 dark:text-slate-400">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <p>© <span id="year"></span> เที่ยวอุทัยธานี – ทำด้วย ♥ เพื่อช่วยวางแผนทริป</p>
+                <div class="flex items-center gap-3">
+                    <a href="#" class="underline">นโยบายความเป็นส่วนตัว</a>
+                    <a href="#" class="underline">ติดต่อผู้พัฒนา</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Templates -->
+    <template id="cardTmpl">
+        <article
+            class="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow group">
+            <div class="relative">
+                <img class="w-full h-40 object-cover" alt="" />
+                <div
+                    class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition">
+                </div>
+                <button
+                    class="absolute bottom-2 right-2 bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 px-3 py-1 rounded-xl text-xs shadow addBtn">+
+                    เพิ่มเข้าทริป</button>
+            </div>
+            <div class="p-4">
+                <div class="flex items-start justify-between gap-3">
+                    <h5 class="font-semibold leading-tight title"></h5>
+                    <span
+                        class="rounded-full px-2 py-1 text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200 cat"></span>
+                </div>
+                <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 desc"></p>
+                <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
+                    <span class="flex items-center gap-1"><svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <path fill="currentColor"
+                                d="M12 21s-8-4.5-8-11a8 8 0 1 1 16 0c0 6.5-8 11-8 11zm0-9a2 2 0 1 0 0-4a2 2 0 0 0 0 4z" />
+                        </svg> <span class="area"></span></span>
+                    <a class="text-brand-700 dark:text-brand-300 hover:underline more" href="#" target="_blank"
+                        rel="noopener">ดูเพิ่มเติม</a>
+                </div>
+            </div>
+        </article>
+    </template>
+
+    <template id="featTmpl">
+        <a
+            class="snap-card min-w-[78%] sm:min-w-[52%] md:min-w-[36%] lg:min-w-[28%] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow hover:shadow-lg transition">
+            <div class="h-44"><img class="w-full h-full object-cover" alt="featured" /></div>
+            <div class="p-3">
+                <div class="flex items-center justify-between">
+                    <h6 class="font-semibold truncate"></h6>
+                    <span
+                        class="text-xs px-2 py-1 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200 tag"></span>
+                </div>
+                <p class="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2"></p>
+            </div>
+        </a>
+    </template>
+
+    <!-- Data + App -->
+    <script>
+        const D = [
+            {
+                id: "wat-tha-sung",
+                name: "วัดจันทาราม (วัดท่าซุง)",
+                cat: "วัด/วัฒนธรรม",
+                area: "อำเภอเมืองอุทัยธานี",
+                coords: [15.3796, 100.0467],
+                img: "https://upload.wikimedia.org/wikipedia/commons/d/d4/%E0%B8%A7%E0%B8%B1%E0%B8%94%E0%B8%97%E0%B9%88%E0%B8%B2%E0%B8%8B%E0%B8%B8%E0%B8%871.jpg",
+                url: "https://th.wikipedia.org/wiki/วัดจันทาราม_(วัดท่าซุง)",
+                desc: "วัดดังประจำจังหวัด โดดเด่นด้วยวิหารแก้วและงานสถาปัตยกรรมที่งดงาม วิบวับตระการตา เหมาะกับสายวัฒนธรรมและถ่ายรูป"
+            },
+            {
+                id: "huai-kha-khaeng",
+                name: "เขตรักษาพันธุ์สัตว์ป่าห้วยขาแข้ง",
+                cat: "ธรรมชาติ/ป่า",
+                area: "อำเภอลานสัก",
+                coords: [15.635, 99.216],
+                img: "https://thbif.onep.go.th/assets/themes/003/imgs/cover/cover-21.jpg",
+                url: "https://th.wikipedia.org/wiki/เขตรักษาพันธุ์สัตว์ป่าห้วยขาแข้ง",
+                desc: "มรดกโลกยูเนสโก ธรรมชาติอุดมสมบูรณ์ เหมาะกับคนรักป่า สัตว์ป่า และการเรียนรู้ระบบนิเวศ"
+            },
+            {
+                id: "sakae-krang-riverfront",
+                name: "ริมแม่น้ำสะแกกรัง & ตลาดเช้ากลางเมือง",
+                cat: "ริมแม่น้ำ/วิว",
+                area: "อำเภอเมืองอุทัยธานี",
+                coords: [15.383, 100.024],
+                img: "https://www.maehongsonholidays.com/wp-content/uploads/2025/07/Uthai-Thani-City_02_07_2025.webp",
+                url: "https://thai.tourismthailand.org/",
+                desc: "เดินเล่นริมแม่น้ำ ชมวิถีแพ ชิมอาหารพื้นถิ่น บรรยากาศโลคอลแบบอุทัยแท้ ๆ"
+            },
+            {
+                id: "ko-thepho",
+                name: "เกาะเทโพ",
+                cat: "ริมแม่น้ำ/วิว",
+                area: "อำเภอเมืองอุทัยธานี",
+                coords: [15.372, 100.011],
+                img: "https://cms.dmpcdn.com/travel/2022/06/23/17c20480-f2bb-11ec-a860-751e6b627e57_webp_original.jpg",
+                url: "https://thai.tourismthailand.org/",
+                desc: "พื้นที่เกษตรธรรมชาติ ใกล้ตัวเมือง ปั่นจักรยาน นั่งคาเฟ่ บรรยากาศชิลล์"
+            },
+            {
+                id: "baan-rai-view",
+                name: "วิวเขาบ้านไร่ & ถ้ำนาคีจำลอง (โซนบ้านไร่)",
+                cat: "ธรรมชาติ/ป่า",
+                area: "อำเภอบ้านไร่",
+                coords: [15.025, 99.541],
+                img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnDPnG21i2X7b9cp12Nl9tGHEf-J0kcHoEfqUssryKdmSEgHocauOO7mNplBLcg6CBbCc&usqp=CAU",
+                url: "https://thai.tourismthailand.org/",
+                desc: "เส้นทางภูเขา ทิวทัศน์สวย อากาศดี แวะจุดชมวิวและถ่ายรูปแนวภูเขาหินปูน"
+            },
+            {
+                id: "local-cafe",
+                name: "คาเฟ่โลคอลริมทุ่ง",
+                cat: "คาเฟ่/โลคอล",
+                area: "รอบเมืองอุทัยฯ",
+                coords: [15.35, 100.02],
+                img: "https://www.lemon8-app.com/seo/image?item_id=7513469523102646801&index=1&sign=83638776c975d5e75974eb9bf764f144",
+                url: "#",
+                desc: "คาเฟ่บรรยากาศท้องถิ่น เครื่องดื่มพื้นบ้าน มุมถ่ายรูปเยอะ เหมาะกับสายชิลล์"
+            }
+        ];
+
+        // State
+        let state = {
+            q: new URLSearchParams(location.search).get('q') || '',
+            cat: new URLSearchParams(location.search).get('cat') || 'ทั้งหมด',
+            plan: []
+        };
+
+        // Dark mode
+        const root = document.documentElement;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+        document.getElementById('darkToggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // Utilities
+        const $ = s => document.querySelector(s);
+        const $$ = s => Array.from(document.querySelectorAll(s));
+        const formatQS = () => {
+            const p = new URLSearchParams();
+            if (state.q) p.set('q', state.q);
+            if (state.cat && state.cat !== 'ทั้งหมด') p.set('cat', state.cat);
+            history.replaceState(null, '', `${location.pathname}?${p.toString()}`);
+        };
+
+        // Build featured
+        const featuredRow = document.getElementById('featuredRow');
+        const featTmpl = document.getElementById('featTmpl');
+        D.slice(0, 5).forEach(item => {
+            const a = featTmpl.content.firstElementChild.cloneNode(true);
+            a.querySelector('img').src = item.img;
+            a.querySelector('h6').textContent = item.name;
+            a.querySelector('.tag').textContent = item.cat;
+            a.querySelector('p').textContent = item.desc;
+            a.href = `#${item.id}`;
+            featuredRow.appendChild(a);
+        });
+
+        // Build chips
+        const chips = $$('.chip');
+        const setActiveChip = () => {
+            chips.forEach(c => c.classList.toggle('active', c.dataset.cat === state.cat));
+        };
+        chips.forEach(c => c.addEventListener('click', () => { state.cat = c.dataset.cat; setActiveChip(); render(); formatQS(); }));
+
+        // Search
+        const searchInput = $('#searchInput');
+        searchInput.value = state.q;
+        searchInput.addEventListener('input', e => { state.q = e.target.value.trim(); render(); formatQS(); });
+
+        // Cards
+        const cards = $('#cards');
+        const emptyState = $('#emptyState');
+        const cardTmpl = $('#cardTmpl');
+
+        function render() {
+            const q = state.q.toLowerCase();
+            const cat = state.cat;
+            const items = D.filter(d => {
+                const hitsText = (d.name + ' ' + d.desc + ' ' + d.area + ' ' + d.cat).toLowerCase().includes(q);
+                const hitsCat = (cat === 'ทั้งหมด') || (d.cat === cat);
+                return hitsText && hitsCat;
+            });
+
+            // Cards
+            cards.innerHTML = '';
+            if (!items.length) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                items.forEach(d => {
+                    const el = cardTmpl.content.firstElementChild.cloneNode(true);
+                    el.id = d.id;
+                    el.querySelector('img').src = d.img;
+                    el.querySelector('.title').textContent = d.name;
+                    el.querySelector('.cat').textContent = d.cat;
+                    el.querySelector('.desc').textContent = d.desc;
+                    el.querySelector('.area').textContent = d.area;
+                    el.querySelector('.more').href = d.url;
+                    el.querySelector('.addBtn').addEventListener('click', () => addToPlan(d));
+                    cards.appendChild(el);
+                });
+            }
+
+            // Map markers
+            drawMarkers(items);
+        }
+
+        // Map
+        const map = L.map('map', { zoomControl: true, scrollWheelZoom: true }).setView([15.375, 100.025], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18, attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+        const markersLayer = L.layerGroup().addTo(map);
+
+        function drawMarkers(items) {
+            markersLayer.clearLayers();
+            const pts = [];
+            items.forEach(d => {
+                if (Array.isArray(d.coords)) {
+                    const m = L.marker(d.coords).addTo(markersLayer)
+                        .bindPopup(`<strong>${d.name}</strong><br/><span class="text-xs">${d.area}</span>`);
+                    pts.push(d.coords);
+                }
+            });
+            if (pts.length) {
+                const b = L.latLngBounds(pts);
+                map.fitBounds(b.pad(0.2));
+            }
+        }
+
+        document.getElementById('fitMapBtn').addEventListener('click', () => drawMarkers(
+            D.filter(d => (state.cat === 'ทั้งหมด' || d.cat === state.cat) &&
+                (d.name + d.desc + d.area + d.cat).toLowerCase().includes(state.q.toLowerCase()))
+        ));
+
+        // Trip planner
+        const PLAN_KEY = 'uthai-trip-plan';
+        const planList = $('#planList');
+        function loadPlan() {
+            try { state.plan = JSON.parse(localStorage.getItem(PLAN_KEY) || '[]'); } catch { state.plan = []; }
+            renderPlan();
+        }
+        function savePlan() { localStorage.setItem(PLAN_KEY, JSON.stringify(state.plan)); }
+        function addToPlan(item) {
+            if (!state.plan.find(p => p.id === item.id)) {
+                state.plan.push({ id: item.id, name: item.name, area: item.area });
+                savePlan(); renderPlan();
+            }
+        }
+        function removeFromPlan(id) {
+            state.plan = state.plan.filter(p => p.id !== id);
+            savePlan(); renderPlan();
+        }
+        function renderPlan() {
+            planList.innerHTML = '';
+            if (!state.plan.length) {
+                const li = document.createElement('li');
+                li.className = 'p-4 text-sm text-slate-500';
+                li.textContent = 'ยังไม่มีรายการในแผนทริป กด “เพิ่มเข้าทริป” ที่การ์ดสถานที่';
+                planList.appendChild(li);
+                return;
+            }
+            state.plan.forEach(p => {
+                const li = document.createElement('li');
+                li.className = 'p-3 flex items-center justify-between gap-2';
+                li.innerHTML = `<div><div class="font-medium">${p.name}</div><div class="text-xs text-slate-500">${p.area}</div></div>
+                        <button class="text-xs px-2 py-1 rounded-lg border">ลบ</button>`;
+                li.querySelector('button').addEventListener('click', () => removeFromPlan(p.id));
+                planList.appendChild(li);
+            });
+        }
+        document.getElementById('clearPlanBtn').addEventListener('click', () => {
+            Swal.fire({
+                title: 'คุณแน่ใจหรือไม่?',
+                text: "ต้องการล้างแผนทริปทั้งหมด",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444', // แดง (ล้าง)
+                cancelButtonColor: '#6b7280', // เทา
+                confirmButtonText: 'ล้างเลย',
+                cancelButtonText: 'ยกเลิก',
+                background: '#1e1e1e',
+                color: '#f5f5f5',
+                reverseButtons: true,
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    state.plan = [];
+                    savePlan();
+                    renderPlan();
+                    Swal.fire({
+                        title: '✅ ล้างสำเร็จ',
+                        text: 'แผนทริปถูกล้างเรียบร้อยแล้ว',
+                        icon: 'success',
+                        background: '#1e1e1e',
+                        color: '#f5f5f5',
+                        confirmButtonColor: '#3b82f6',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        });
+
+        document.getElementById("showTripBtn").addEventListener("click", () => {
+    Swal.fire({
+        title: '🗺️ แผนที่เส้นทาง',
+        html: '<div id="mapContainer" style="width:100%;height:400px;border-radius:12px;overflow:hidden;"></div>',
+        background: '#1e1e1e',
+        color: '#f5f5f5',
+        width: '60%',
+        showConfirmButton: false,
+        showCloseButton: true,
+        didOpen: () => {
+            // โหลดแผนที่หลัง popup เปิด
+            showTripOnMap("mapContainer");
+        }
+    });
+});
+        // Share
+        document.getElementById('shareBtn').addEventListener('click', async () => {
+            const url = location.href;
+            try {
+                if (navigator.share) { await navigator.share({ title: 'เที่ยวอุทัยธานี', url }); }
+                else { await navigator.clipboard.writeText(url); alert('คัดลอกลิงก์แล้ว'); }
+            } catch { }
+        });
+
+        // Init
+        setActiveChip();
+        render();
+        loadPlan();
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // Haversine formula สำหรับคำนวณระยะทางระหว่าง 2 จุด (km)
+        function haversineDistance(coords1, coords2) {
+            const R = 6371; // km
+            const dLat = (coords2[0] - coords1[0]) * Math.PI / 180;
+            const dLon = (coords2[1] - coords1[1]) * Math.PI / 180;
+            const lat1 = coords1[0] * Math.PI / 180;
+            const lat2 = coords2[0] * Math.PI / 180;
+
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        let tripLineLayer = null;
+
+        // ปุ่มคำนวณระยะทาง
+        const calcBtn = document.createElement("button");
+        calcBtn.textContent = "คำนวณระยะทาง";
+        calcBtn.className = "text-xs px-2 py-1 rounded-lg border ml-2";
+
+        // ✅ ผูก event ให้ popup เด้ง
+        calcBtn.addEventListener("click", calculateDistance);
+
+        document.querySelector("#clearPlanBtn").insertAdjacentElement("afterend", calcBtn);
+
+        function calculateDistance() {
+            if (state.plan.length < 2) {
+                Swal.fire({
+                    title: "ผิดพลาด",
+                    text: "กรุณาเลือกอย่างน้อย 2 สถานที่",
+                    icon: "error",
+                    background: "#1e1e1e",
+                    color: "#f5f5f5",
+                    confirmButtonColor: "#3b82f6"
+                });
+                return;
+            }
+
+            let totalDistance = 0;
+            let details = "";
+
+            for (let i = 0; i < state.plan.length - 1; i++) {
+                const from = D.find(d => d.id === state.plan[i].id);
+                const to = D.find(d => d.id === state.plan[i + 1].id);
+                const distance = haversineDistance(from.coords, to.coords);
+                totalDistance += distance;
+                details += `
+            <div style="margin-bottom:6px;">
+                <b>${from.name}</b> → <b>${to.name}</b> : ${distance.toFixed(2)} กม.
+            </div>`;
+            }
+
+            details += `<hr><div style="font-size:16px; font-weight:bold; color:#60a5fa;">
+                    รวมทั้งหมด: ${totalDistance.toFixed(2)} กม.
+                </div>`;
+
+            Swal.fire({
+                title: "📍 ระยะทางทริป",
+                html: `<div style="text-align:left; font-size:14px; line-height:1.6;">${details}</div>`,
+                icon: "info",
+                background: "#1e1e1e",   // พื้นหลังดำ
+                color: "#f5f5f5",        // ตัวอักษรขาว
+                confirmButtonColor: "#3b82f6", // ปุ่มน้ำเงิน
+                width: 500,
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            });
+        }
+        function showTripOnMap(containerId) {
+    if (state.plan.length < 2) {
+        alert("กรุณาเลือกอย่างน้อย 2 สถานที่");
+        return;
+    }
+
+    // ✅ สร้าง map ใหม่ใน popup
+    const tripMap = L.map(containerId).setView([15.375, 100.025], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(tripMap);
+
+    // waypoints จาก state.plan
+    const waypoints = state.plan.map(p => {
+        const place = D.find(d => d.id === p.id);
+        return L.latLng(place.coords[0], place.coords[1]);
+    });
+
+    // สร้างเส้นทางใหม่
+    L.Routing.control({
+        waypoints: waypoints,
+        lineOptions: {
+            styles: [{ color: 'blue', weight: 5 }]
+        },
+        routeWhileDragging: false,
+        addWaypoints: false,
+        draggableWaypoints: false,
+        createMarker: function (i, wp) {
+            return L.marker(wp.latLng).bindPopup(state.plan[i].name);
+        }
+    }).addTo(tripMap);
+
+    // ✅ ปรับขอบเขต map ให้พอดีกับเส้นทาง
+    tripMap.fitBounds(L.latLngBounds(waypoints), { padding: [30, 30] });
+}
+    </script>
+</body>
+
+</html>
